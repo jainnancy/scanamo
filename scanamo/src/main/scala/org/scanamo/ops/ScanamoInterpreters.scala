@@ -50,9 +50,7 @@ object ScanamoInterpreters {
       case BatchGet(req) =>
         client.batchGetItem(req)
       case Update(req) =>
-        client.updateItem(JavaRequests.update(req))
-      case ConditionalUpdate(req) =>
-        Either.catchOnly[ConditionalCheckFailedException] {
+        Either.catchOnly[AmazonDynamoDBException] {
           client.updateItem(JavaRequests.update(req))
         }
     }
@@ -113,11 +111,9 @@ object ScanamoInterpreters {
         )
       case Update(req) =>
         futureOf(client.updateItemAsync, JavaRequests.update(req))
-      case ConditionalUpdate(req) =>
-        futureOf(client.updateItemAsync, JavaRequests.update(req))
-          .map(Either.right[ConditionalCheckFailedException, UpdateItemResult])
+          .map(Either.right[AmazonDynamoDBException, UpdateItemResult])
           .recover {
-            case e: ConditionalCheckFailedException => Either.left(e)
+            case e: AmazonDynamoDBException => Either.left(e)
           }
     }
   }

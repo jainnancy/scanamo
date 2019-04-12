@@ -2,7 +2,7 @@ package org.scanamo.query
 
 import com.amazonaws.services.dynamodbv2.model._
 import org.scanamo.DynamoFormat
-import org.scanamo.error.{ConditionNotMet, ScanamoError}
+import org.scanamo.error.{DynamoDBException, ScanamoError}
 import org.scanamo.ops.ScanamoOps
 import org.scanamo.request.{RequestCondition, ScanamoDeleteRequest, ScanamoPutRequest, ScanamoUpdateRequest}
 import org.scanamo.update.UpdateExpression
@@ -40,11 +40,11 @@ case class ConditionalOperation[V, T](tableName: String, t: T)(
       None
     )
     ScanamoOps
-      .conditionalUpdate(unconditionalRequest.copy(condition = Some(state.apply(t)(unconditionalRequest.condition))))
+      .update(unconditionalRequest.copy(condition = Some(state.apply(t)(unconditionalRequest.condition))))
       .map(
         either =>
           either
-            .leftMap[ScanamoError](ConditionNotMet(_))
+            .leftMap[ScanamoError](DynamoDBException(_))
             .flatMap(r => format.read(new AttributeValue().withM(r.getAttributes)))
       )
   }
